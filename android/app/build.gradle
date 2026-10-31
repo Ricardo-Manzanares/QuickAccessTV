@@ -1,0 +1,45 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.quickaccesstv.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.quickaccesstv.app'
+        minSdk 23                 // Fire OS 6 (Fire TV Stick 4K gen1) = Android 7.1 / API 25
+        targetSdk 34
+        versionCode 15
+        versionName '3.0.0'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    // La UI web compartida (../../web) se copia aquí en build-and-install.sh.
+    sourceSets { main { assets.srcDirs += ['src/main/assets'] } }
+
+    // Dimensión "target":
+    //  - androidtv: incluye la actividad HOME (alias en src/androidtv/) -> puede ser el launcher.
+    //  - firetv: SIN HOME -> aparece en la biblioteca de apps de Fire TV (que oculta las apps con HOME).
+    //    Id propio (com.quickaccesstv.app.firetv). El id no debe existir en el catálogo de la Appstore:
+    //    si existe, el Home de Amazon usa la imagen del catálogo para el tile de favoritos.
+    // Dimensión "watchdog" (opcional, solo Fire TV):
+    //  - plain: la app sola.
+    //  - watchdog: añade HomeWatchdogService (src/firetvWatchdog/), que vuelve a abrir la app al pulsar Inicio.
+    flavorDimensions = ["target", "watchdog"]
+    productFlavors {
+        androidtv { dimension "target" }
+        firetv { dimension "target"; applicationIdSuffix ".firetv" }
+        plain { dimension "watchdog" }
+        watchdog { dimension "watchdog" }
+    }
+}
+
+// En Android TV la app ya es el Home: no hay variante con watchdog.
+androidComponents {
+    beforeVariants(selector().withFlavor(new kotlin.Pair("target", "androidtv"))
+            .withFlavor(new kotlin.Pair("watchdog", "watchdog"))) { variant -> variant.enable = false }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

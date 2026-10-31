@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo la variante firetv: NO declara HOME (para seguir visible en la biblioteca de Fire TV).
+     El watchdog usa estadisticas de uso (permiso concedido por ADB con
+       adb shell appops set com.quickaccesstv.app.firetv android:get_usage_stats allow )
+     para detectar el launcher de Amazon en primer plano y volver a abrir la app encima. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Permiso de sistema; en Fire TV se concede por ADB (appops), no por UI. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- Cover: tapa el Home de Amazon mientras Fire OS retiene la vuelta (se concede por ADB, appops). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <application android:name=".FireApp">
+
+        <service
+            android:name=".HomeWatchdogService"
+            android:exported="false" />
+
+        <receiver
+            android:name=".BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <!-- Prioridad alta: BOOT_COMPLETED es un broadcast ordenado y Fire OS lo reparte primero a sus
+                 propias apps; sin prioridad la nuestra lo recibe más de un minuto después de encender. -->
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

@@ -1,0 +1,9 @@
+{
+  "name": "com.quickaccesstv.app.watchdog",
+  "version": "3.0.0",
+  "description": "Vuelve a abrir QuickAccess TV cuando aparece el Home de LG",
+  "main": "service.js",
+  "dependencies": {
+    "ws": "7.5.10"
+  }
+}

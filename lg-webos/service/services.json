@@ -1,0 +1,9 @@
+{
+  "id": "com.quickaccesstv.app.watchdog",
+  "description": "Vuelve a abrir QuickAccess TV cuando aparece el Home de LG",
+  "services": [
+    {
+      "name": "com.quickaccesstv.app.watchdog"
+    }
+  ]
+}

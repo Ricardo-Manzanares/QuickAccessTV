@@ -1,0 +1,12 @@
+{
+  "name": "quickaccesstv",
+  "private": true,
+  "description": "Herramientas del repositorio de QuickAccess TV (la app se compila con lg-webos/ y android/)",
+  "scripts": {
+    "docs": "node tools/docs-preview.js",
+    "docs:pdf": "node tools/docs-pdf.js"
+  },
+  "devDependencies": {
+    "marked": "12.0.2"
+  }
+}

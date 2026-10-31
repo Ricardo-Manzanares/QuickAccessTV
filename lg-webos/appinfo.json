@@ -1,0 +1,15 @@
+{
+  "id": "com.quickaccesstv.app",
+  "version": "3.0.0",
+  "vendor": "QuickAccessTV",
+  "type": "web",
+  "main": "index.html",
+  "title": "QuickAccess TV",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#000000",
+  "iconColor": "#0b8783",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "handlesRelaunch": true
+}

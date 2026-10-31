@@ -1,0 +1,5 @@
+<resources>
+    <string name="watchdog_text">Vigilando el inicio</string>
+    <string name="watchdog_paused">QuickAccess TV en pausa: ábrela para que Inicio vuelva a llevarte a ella.</string>
+    <string name="watchdog_resumed">QuickAccess TV vuelve a abrirse al pulsar Inicio</string>
+</resources>

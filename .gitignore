@@ -1,0 +1,15 @@
+# Dependencias y compilados
+node_modules/
+lg-webos/build/
+lg-webos/logs/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+# Copia de web/ que build-and-install.sh mete en el APK
+android/app/src/main/assets/web/
+
+# Token del Modo Desarrollador de LG (personal, nunca al repo)
+lg-webos/tools/.devmode-token
+# Clave de emparejamiento SSAP de tools/capture.js (personal)
+lg-webos/tools/.ssap-client-key

@@ -1,0 +1,415 @@
+/* Geometry variables (--tile-w, --band-top, ...) are set by layout() in home.js from CONFIG.columns. */
+@font-face {
+  font-family: "Outfit";
+  src: url("../fonts/Outfit.ttf") format("truetype");
+  font-weight: 100 900;
+}
+
+html, body {
+  margin: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #55595e;
+  color: #fff;
+  font-family: "Outfit", sans-serif;
+  cursor: default;
+  user-select: none;
+}
+
+/* Usamos nuestro resaltado de cristal: sin el foco nativo (el WebView de Android TV lo pinta en naranja). */
+* { outline: none !important; -webkit-tap-highlight-color: transparent; }
+
+/* Fondo gris degradado estilo Apple TV (claro arriba-izquierda, oscuro abajo). */
+#wallpaper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(135% 115% at 18% -5%, #abb0b6 0%, #80858b 42%, #52565b 100%) center / cover no-repeat;
+}
+
+/* Fondo 4K: ocupa de arriba hasta el dock y se difumina (máscara) hacia el gris de #wallpaper.
+   Solo visible (opacity 1) con el dock en reposo; se oculta en la rejilla y con carpetas. */
+#backdrop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  opacity: 0;
+  transition: opacity 700ms ease;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 var(--bd-fade-start, 900px), transparent var(--bd-fade-end, 1080px));
+  mask-image: linear-gradient(to bottom, #000 0, #000 var(--bd-fade-start, 900px), transparent var(--bd-fade-end, 1080px));
+}
+#backdrop.show { opacity: 1; }
+/* Dos capas apiladas que se funden al rotar de imagen. */
+.bd-layer {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: center top / cover no-repeat;
+  opacity: 0;
+  transition: opacity 1200ms ease;
+}
+.bd-layer.front { opacity: 1; }
+/* Scrim superior sutil para que el reloj y los pills se lean sobre fotos claras. */
+#backdrop::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; right: 0;
+  height: 360px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0));
+}
+
+#page {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#page.in-grid { transform: translateY(calc(-1 * var(--page-shift))); }
+
+/* ---------------------------------------------------------------- glow behind the title */
+.glow {
+  position: absolute;
+  left: calc(var(--margin) + var(--pad) + 300px - 720px);
+  top: calc(var(--band-top) - 100px - 300px);
+  width: 1440px;
+  height: 600px;
+  opacity: 0;
+  transition: opacity 500ms ease;
+  pointer-events: none;
+}
+.glow.on { opacity: 1; }
+#page.in-grid .glow { opacity: 0 !important; }
+
+/* ---------------------------------------------------------------- clock */
+#clockbox {
+  position: absolute;
+  left: var(--margin);
+  top: 68px;
+}
+#clockbox { text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28); }
+#greeting { font-size: 34px; font-weight: 400; color: rgba(255, 255, 255, 0.82); }
+#clock { font-size: 152px; font-weight: 200; line-height: 1; margin: 8px 0 10px -6px; letter-spacing: -2px; }
+#date { font-size: 38px; font-weight: 300; color: rgba(255, 255, 255, 0.88); }
+
+/* ---------------------------------------------------------------- pills */
+#pills {
+  position: absolute;
+  right: var(--margin);
+  top: 76px;
+  display: flex;
+  gap: 24px;
+}
+.pill {
+  height: 72px;
+  padding: 0 32px 0 28px;
+  border-radius: 36px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  max-width: 440px;
+  overflow: hidden;
+  transition: transform 160ms ease;
+  box-sizing: border-box;
+}
+.pill.round { width: 72px; padding: 0; justify-content: center; }
+.pill svg { width: 36px; height: 36px; fill: rgba(255, 255, 255, 0.9); flex: none; }
+.pill span { overflow: hidden; text-overflow: ellipsis; }
+.pill.focused { transform: scale(1.06); }
+
+/* ---------------------------------------------------------------- title above the dock */
+#title {
+  position: absolute;
+  left: calc(var(--margin) + var(--pad));
+  top: calc(var(--band-top) - 156px);
+  font-size: 88px;
+  font-weight: 250;
+  color: #fff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.32);
+  white-space: nowrap;
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+#title.enter { opacity: 0.2; transform: translateX(16px); transition: none; }
+#page.in-grid #title { opacity: 0; }
+
+/* ---------------------------------------------------------------- dock band */
+#dock {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  top: var(--band-top);
+  height: var(--band-h);
+  padding: var(--pad);
+  box-sizing: border-box;
+  border-radius: 52px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+  display: flex;
+  gap: var(--gap);
+}
+
+/* ---------------------------------------------------------------- grid */
+#gridwrap {
+  position: absolute;
+  left: var(--margin);
+  right: var(--margin);
+  top: var(--grid-top);
+  height: var(--grid-view-h);
+  overflow: hidden;
+}
+#grid {
+  padding: 24px var(--pad) 24px;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), var(--tile-w));
+  grid-auto-rows: var(--row-h);
+  column-gap: var(--gap);
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---------------------------------------------------------------- tiles */
+.tile { width: var(--tile-w); }
+.card {
+  width: var(--tile-w);
+  height: var(--tile-h);
+  border-radius: 20px;
+  background: #1c1c1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 200ms ease;
+}
+.card img { width: 128px; height: 128px; object-fit: contain; }
+.card img.local { width: 104px; height: 104px; }
+.card img.cover { width: 100%; height: 100%; object-fit: cover; }   /* banners 16:9 (Android TV) */
+.label {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 28px;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.tile.focused .card { transform: scale(1.1); }
+.tile.focused .label { opacity: 1; }
+
+/* ---------------------------------------------------------------- the single glass highlight */
+#glass {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  width: 0;
+  height: 0;
+  border-radius: 32px;
+  box-sizing: border-box;
+  border: 3px solid rgba(255, 255, 255, 0.45);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 60%), rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+#glass.emphasis {
+  border: 6px solid rgba(255, 255, 255, 0.95);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 60%), rgba(255, 255, 255, 0.18);
+}
+
+/* ---------------------------------------------------------------- menus + toast */
+#menu {
+  position: absolute;
+  z-index: 30;
+  width: 580px;
+  padding: 14px;
+  box-sizing: border-box;
+  border-radius: 36px;
+  background: #1e1e21;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+.menu-item {
+  padding: 20px 32px;
+  border-radius: 22px;
+  font-size: 32px;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.95);
+}
+.menu-item.focused { background: rgba(255, 255, 255, 0.18); }
+.hidden { display: none !important; }
+
+#toast {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%);
+  max-width: 1400px;
+  padding: 24px 40px;
+  border-radius: 32px;
+  background: #1e1e21;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  font-size: 30px;
+  text-align: center;
+}
+/* Aviso breve y discreto: arriba en el centro, entre el reloj y los botones. */
+#toast.hint {
+  top: 56px;
+  bottom: auto;
+  padding: 14px 30px;
+  font-size: 24px;
+  background: rgba(20, 20, 24, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------------------------------------------------------------- carpetas (tile con mini-rejilla) */
+.folder-card {
+  background: rgba(205, 210, 217, 0.34);
+  padding: calc(var(--tile-h) * 0.1);
+  box-sizing: border-box;
+}
+.folder-mini {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: calc(var(--tile-h) * 0.05);
+}
+.fm-cell {
+  border-radius: 22%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.12);
+}
+.folder-card .fm-cell img { width: 84%; height: 84%; object-fit: contain; }
+
+/* ---------------------------------------------------------------- overlay de carpeta abierta */
+#folderview {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 12, 16, 0.55);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+#folder-name {
+  font-size: 58px;
+  font-weight: 300;
+  color: #fff;
+  margin-bottom: 52px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+}
+#folder-grid {
+  display: grid;
+  grid-auto-rows: var(--row-h);
+  column-gap: var(--gap);
+  row-gap: 20px;
+  justify-content: center;
+}
+.ftile { width: var(--tile-w); }
+.ftile .card { transition: transform 180ms ease, box-shadow 180ms ease; }
+.ftile.focused .card {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.95), 0 22px 55px rgba(0, 0, 0, 0.55);
+}
+.ftile.focused .label { opacity: 1; }
+
+/* ---------------------------------------------------------------- acerca de / novedades */
+#about {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 12, 16, 0.6);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.about-box {
+  width: 1100px;
+  max-width: 82%;
+  max-height: 80%;
+  padding: 56px 64px;
+  box-sizing: border-box;
+  border-radius: 40px;
+  background: #1e1e21;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+.about-title { font-size: 52px; font-weight: 300; color: #fff; margin-bottom: 36px; }
+.about-ver { font-size: 36px; color: #8e9bb5; margin-left: 18px; }
+.about-body { font-size: 30px; line-height: 1.5; color: rgba(255, 255, 255, 0.92); }
+.about-body .cl-ver { font-size: 34px; font-weight: 500; color: #fff; margin: 22px 0 10px; }
+.about-body .cl-ver:first-child { margin-top: 0; }
+.about-body ul { margin: 0 0 6px; padding-left: 36px; }
+.about-body li { margin: 6px 0; color: rgba(255, 255, 255, 0.82); }
+.about-hint { margin-top: 34px; font-size: 26px; color: rgba(255, 255, 255, 0.5); }
+
+/* ---------------------------------------------------------------- diálogo de nombre (teclado) */
+#namedialog {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 12, 16, 0.6);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.nd-box {
+  width: 980px;
+  max-width: 80%;
+  padding: 56px 60px;
+  box-sizing: border-box;
+  border-radius: 40px;
+  background: #1e1e21;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+#nd-title { font-size: 46px; font-weight: 300; margin-bottom: 36px; color: #fff; }
+#nd-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 44px;
+  padding: 24px 28px;
+  border-radius: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  outline: none;
+  text-align: center;
+}
+#nd-input:focus { border-color: #8e56f2; background: rgba(255, 255, 255, 0.12); }
+.nd-hint { margin-top: 28px; font-size: 28px; color: rgba(255, 255, 255, 0.6); }

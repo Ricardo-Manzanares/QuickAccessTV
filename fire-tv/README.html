@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickAccess TV en Fire TV</title>
+<style>
+:root {
+  --bg: #f4f7f6; --panel: #ffffff; --fg: #17201f; --muted: #5b6b69; --line: #d9e3e1;
+  --accent: #0b8783; --accent-soft: #e3f3f1; --code: #eef3f2;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f1716; --panel: #162120; --fg: #e6eeec; --muted: #93a5a2; --line: #263533;
+          --accent: #3cc7b0; --accent-soft: #173431; --code: #1b2a28; color-scheme: dark; }
+}
+@font-face { font-family: Outfit; src: url("../web/fonts/Outfit.ttf"); }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.6 Outfit, "Segoe UI", system-ui, sans-serif; }
+.layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; }
+nav { background: var(--panel); border-right: 1px solid var(--line); padding: 28px 20px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; text-decoration: none; color: var(--fg); }
+.brand img { width: 44px; height: 44px; border-radius: 10px; }
+.brand b { font-size: 19px; letter-spacing: .01em; }
+nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+nav a.doc { display: block; padding: 8px 12px; border-radius: 8px; color: var(--fg); text-decoration: none; font-size: 15px; }
+nav a.doc:hover { background: var(--accent-soft); }
+nav a.doc.current { background: var(--accent); color: #fff; }
+nav small { display: block; color: var(--muted); font-size: 12px; margin: 22px 12px 0; }
+main { padding: 40px max(24px, 4vw) 80px; min-width: 0; }
+article { max-width: 920px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; padding: 36px 44px; }
+h1, h2, h3 { line-height: 1.25; text-wrap: balance; }
+h1 { font-size: 34px; margin-top: 0; }
+h2 { font-size: 24px; margin-top: 2em; padding-bottom: .3em; border-bottom: 1px solid var(--line); }
+h3 { font-size: 19px; margin-top: 1.6em; }
+a { color: var(--accent); }
+img { max-width: 100%; height: auto; border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; margin: 1em 0; font-size: 15px; }
+th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--accent-soft); }
+code { font-family: "Cascadia Mono", Consolas, ui-monospace, monospace; font-size: .9em;
+  background: var(--code); padding: .1em .35em; border-radius: 5px; }
+pre { background: var(--code); padding: 16px 18px; border-radius: 10px; overflow-x: auto; }
+pre code { background: none; padding: 0; font-size: 14px; }
+blockquote { margin: 1em 0; padding: .2em 1em; border-left: 4px solid var(--accent); color: var(--muted); }
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; }
+  nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  article { padding: 24px 20px; }
+}</style>
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <a class="brand" href="../index.html"><img src="../design/icon/icon.png" alt=""><b>QuickAccess TV</b></a>
+    <ul>
+      <li><a class="doc" href="../index.html">QuickAccess TV</a></li>
+      <li><a class="doc" href="../lg-webos/README.html">QuickAccess TV en LG webOS</a></li>
+      <li><a class="doc" href="../android-tv/README.html">QuickAccess TV en Android TV</a></li>
+      <li><a class="doc current" href="README.html">QuickAccess TV en Fire TV</a></li>
+      <li><a class="doc" href="../docs/home-watchdog.html">HomeWatchdogService: pantalla de inicio propia sin root en Fire TV y LG webOS</a></li>
+    </ul>
+    <small>Vista previa generada a partir de fire-tv/README.md</small>
+  </nav>
+  <main><article>
+<h1 id="quickaccess-tv-en-fire-tv">QuickAccess TV en Fire TV</h1>
+<p><img src="capturas/inicio.png" alt="QuickAccess TV en Fire TV"></p>
+<p>Fire OS no permite que una app sustituya a su pantalla de inicio: el botón Inicio siempre abre el Home
+de Amazon. Por eso, en Fire TV QuickAccess TV es una app normal y, de forma <strong>opcional</strong>, se instala con
+<strong>HomeWatchdogService</strong>, un servicio que la vuelve a abrir en cuanto aparece el Home de Amazon, sin root.
+Cómo funciona y qué se descubrió de Fire OS por el camino: <a href="../docs/home-watchdog.html">docs/home-watchdog.md</a>.
+Id de la app: <code>com.quickaccesstv.app.firetv</code>.</p>
+<p><strong>Probado en:</strong> Fire TV Stick 4K (1.ª generación) con Fire OS 6.7.1.1 (Android 7.1.2, API 25).</p>
+<h2 id="cómo-se-comporta-con-homewatchdogservice">Cómo se comporta con HomeWatchdogService</h2>
+<table>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pulsar <strong>Inicio</strong></td>
+<td>Vuelve a QuickAccess TV. Mientras Fire OS tarda en devolverla (unos segundos), se muestra su última imagen, de modo que el Home de Amazon casi no se ve. Durante 5 s, un aviso recuerda «Mantén pulsado Inicio para ir al Home de Amazon».</td>
+</tr>
+<tr>
+<td><strong>Mantener pulsado Inicio</strong></td>
+<td>Se abre el menú rápido de Fire TV y la vuelta automática queda en <strong>pausa</strong>: puedes usar el Home de Amazon con normalidad.</td>
+</tr>
+<tr>
+<td>Abrir QuickAccess TV a mano</td>
+<td>Se reactiva la vuelta automática.</td>
+</tr>
+<tr>
+<td>Encender o reiniciar el Fire TV</td>
+<td>QuickAccess TV se abre sola y la vuelta automática se reactiva.</td>
+</tr>
+<tr>
+<td>Botón <strong>Ajustes ⚙</strong></td>
+<td>Abre la Configuración de Fire TV a pantalla completa, sin que la app la tape.</td>
+</tr>
+</tbody></table>
+<p>Sin el servicio, QuickAccess TV es una app más: se abre desde la biblioteca o los favoritos y el botón
+Inicio lleva al Home de Amazon.</p>
+<p>Además, la rejilla oculta las apps de sistema de Amazon salvo Prime Video. La lista de excepciones es
+<code>FIRE_KEEP_SYSTEM</code> en <code>web/js/platform-android.js</code>.</p>
+<h2 id="requisitos">Requisitos</h2>
+<ul>
+<li>Fire TV con <strong>depuración ADB</strong> activada: Ajustes → Mi Fire TV → Acerca de → pulsa 7 veces el nombre
+del dispositivo, y después Mi Fire TV → Opciones para desarrolladores → <strong>Depuración ADB</strong>.</li>
+<li>PC con <strong>JDK 17</strong>, <strong>Android SDK</strong> y <strong>bash</strong>, como en <a href="../android-tv/README.html#requisitos">Android TV</a>.</li>
+</ul>
+<h2 id="instalar">Instalar</h2>
+<pre><code class="language-sh">adb connect &lt;ip-del-fire-tv&gt;:5555        # acepta el aviso que aparece en la tele
+
+# Solo la app
+TV=&lt;ip-del-fire-tv&gt;:5555 FLAVOR=firetv ./android/build-and-install.sh
+
+# La app con HomeWatchdogService (vuelve sola al pulsar Inicio)
+TV=&lt;ip-del-fire-tv&gt;:5555 FLAVOR=firetv WATCHDOG=1 ./android/build-and-install.sh
+</code></pre>
+<p>Sin <code>WATCHDOG=1</code> el servicio no se instala: el APK no lleva ni el servicio, ni el arranque al encender,
+ni los permisos especiales. Con <code>WATCHDOG=1</code>, el script además concede por ADB los dos permisos que
+necesita la vuelta automática:</p>
+<pre><code class="language-sh">adb shell appops set com.quickaccesstv.app.firetv android:get_usage_stats allow   # detectar el Home de Amazon
+adb shell appops set com.quickaccesstv.app.firetv SYSTEM_ALERT_WINDOW allow       # tapar la espera al volver
+</code></pre>
+<p>Fire OS no tiene pantalla para conceder estos permisos; si reinstalas la app desde otro sitio, vuelve a
+ejecutar esas dos líneas.</p>
+<p>Al terminar, el script abre la app una vez y <strong>reinicia el Fire TV</strong> (<code>NO_REBOOT=1</code> para evitarlo):</p>
+<ul>
+<li>El launcher de Amazon solo vuelve a leer el icono de las apps instaladas fuera de la Appstore al
+arrancar; sin reiniciar, el tile de QuickAccess TV sale en blanco tras instalar o actualizar. Si se
+actualiza sin reiniciar (por ejemplo, con Downloader), la propia app avisa al abrirse y ofrece ir a
+Ajustes → Mi Fire TV → Reiniciar.</li>
+<li>Android deja una app recién instalada &quot;detenida&quot; y no le entrega el aviso de arranque hasta que se abre
+una vez: por eso el script la abre antes de reiniciar.</li>
+</ul>
+<p>Tras encender, QuickAccess TV aparece en cuanto Fire OS entrega el aviso de arranque a las apps de
+terceros, unos segundos después de mostrar su propio Home.</p>
+<p>Para tenerla en la fila superior: Apps → <strong>Mis apps y juegos</strong>, selecciona <strong>QuickAccess TV</strong>, pulsa ☰ →
+<strong>Mover</strong> y súbela a favoritos.</p>
+<h2 id="desinstalar">Desinstalar</h2>
+<pre><code class="language-sh">adb -s &lt;ip-del-fire-tv&gt;:5555 uninstall com.quickaccesstv.app.firetv
+</code></pre>
+<p>O desde el Fire TV: Ajustes → Aplicaciones → Administrar aplicaciones instaladas → QuickAccess TV →
+Desinstalar.</p>
+
+  </article></main>
+</div>
+</body>
+</html>
