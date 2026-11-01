@@ -70,7 +70,7 @@ QuickAccess TV, sin root. Cómo funciona y qué se descubrió de webOS por el ca
 | Pulsar la casita | Vuelve a QuickAccess TV en unos 0,7 s; durante 5 s un aviso recuerda que otra pulsación lleva al menú de LG. |
 | Pulsar la casita otra vez con la app ya de vuelta | Se queda la barra de LG, con un aviso de que la vuelta automática está en pausa. |
 | Abrir QuickAccess TV a mano | Se reactiva. |
-| Encender la tele | QuickAccess TV se abre sola y la vuelta automática se reactiva. |
+| Encender la tele | Se queda la app con la que arranca la tele (TV en directo o la última entrada); la vuelta automática se reactiva. |
 
 El servicio se arranca la primera vez que se abre la app y después se mantiene solo, también tras
 apagar y encender la tele. Para quitarlo, reinstala sin `WATCHDOG=1`.

@@ -101,7 +101,8 @@ sí **SSAP** (`ws://127.0.0.1:3000`), la API de segunda pantalla que usa el móv
 
 1. La app, que ya está emparejada por SSAP para leer la lista de apps, arranca el servicio y le pasa su
    registro (manifiesto + clave). No aparece ningún aviso nuevo en la tele.
-2. El servicio se suscribe a `ssap://com.webos.applicationManager/getForegroundAppInfo`.
+2. El servicio se suscribe a `ssap://com.webos.applicationManager/getForegroundAppInfo` y al estado de
+   energía (`ssap://com.webos.service.tvpower/power/getPowerState`).
 3. Cuando el primer plano pasa a `com.webos.app.home`, abre la app con `ssap://system.launcher/launch`.
 
 Node.js en webOS 22 es la versión 12 y no trae WebSocket: el servicio usa la librería `ws` 7.
@@ -115,7 +116,8 @@ Node.js en webOS 22 es la versión 12 y no trae WebSocket: el servicio usa la li
 | Hace falta una forma de ir a la barra de LG. | Pulsar Inicio otra vez cuando la app ya ha vuelto (menos de 6 s después) pausa la vuelta automática hasta abrir la app a mano. Al volver, la app muestra durante 5 s «Pulsa la casita otra vez para ir al menú de LG» (el servicio se lo comunica con una suscripción propia, `events`); al pausar, el servicio muestra un aviso del sistema de LG (`ssap://system.notifications/createToast`). |
 | Los Ajustes y la página de Red se abren encima sin cambiar el primer plano. | Solo se reacciona a `com.webos.app.home`; los Ajustes no se tapan. |
 | El servicio debe sobrevivir al reposo y volver a arrancar tras un arranque en frío sin abrir la app. | Una actividad del gestor de actividades (`com.palm.activitymanager`) mantiene vivo el servicio. Además se crean dos actividades **persistentes**: una cuyo disparador es un método del propio servicio (al arrancar la tele, el gestor restaura la actividad y se suscribe a ese método, lo que arranca el servicio) y otra periódica cada 5 min como respaldo, el intervalo mínimo admitido. Disparar con el estado de encendido (`tvpower`) está vetado a terceros. |
-| Al encender desde reposo, la tele abre su primera app (TV en directo o el último HDMI). | El primer plano pasa por un valor vacío al apagar la pantalla; al volver a tener app, el servicio abre QuickAccess TV y quita la pausa. |
+| Al encender desde reposo, la tele abre su primera app (TV en directo o el último HDMI), y abrir QuickAccess TV encima cortaría el canal que se está viendo. | No se abre la app al encender: se deja la app de la tele delante. El servicio se suscribe al estado de energía por SSAP (`ssap://com.webos.service.tvpower/power/getPowerState`, permiso `READ_POWER_STATE`) y, al pasar de reposo a `Active`, solo quita la pausa. |
+| El primer plano también pasa por un valor vacío al cerrarse ventanas de LG (actualización de software, Modo Desarrollador...), no solo al apagar la pantalla; tomarlo como apagado hacía que el cierre de una ventana quitara la pausa y abriera la app como si se encendiera la tele. | El reposo se decide solo con el estado de energía. El primer plano vacío solo se usa como indicio de apagado si la tele no informa de su estado de energía. |
 | Cada vez que algo se empareja por SSAP con la tele, caducan las direcciones de iconos que la app tenía. | Si quedan iconos sin cargar tras los reintentos, la app vuelve a pedir la lista de apps. |
 
 ### Comportamiento
@@ -125,7 +127,7 @@ Node.js en webOS 22 es la versión 12 y no trae WebSocket: el servicio usa la li
 | Pulsar la casita | Vuelve a QuickAccess TV en unos 0,7 s, con un aviso breve de cómo ir al menú de LG. |
 | Pulsar la casita otra vez con la app ya de vuelta | Se queda la barra de LG, con un aviso de que la vuelta automática está en pausa. |
 | Abrir la app a mano | Se reactiva. |
-| Encender la tele | QuickAccess TV se abre sola y la vuelta automática se reactiva. |
+| Encender la tele | Se queda la app con la que arranca la tele (TV en directo o la última entrada); la vuelta automática se reactiva. |
 
 Código: `lg-webos/service/` (`service.js`, `services.json`, `package.json`).
 

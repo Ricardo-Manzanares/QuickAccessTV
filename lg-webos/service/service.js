@@ -15,7 +15,6 @@ var RETRY_MS = 300;     // si la barra sigue delante, se vuelve a intentar
 var MAX_ATTEMPTS = 5;
 var ESCAPE_MS = 6000;   // Inicio otra vez antes de este tiempo (con la app ya de vuelta): se queda el Home de LG
 var SETTLE_MS = 1200;   // si la barra reaparece antes de esto, es su animación de entrada, no otra pulsación
-var POWER_ON_DELAY_MS = 1500;   // al encender, deja que la tele abra su primera app antes de poner la nuestra
 var service = new Service(pkg.name);
 
 var report = "";        // CONFIG.debugReport de la app: registros al PC (solo desarrollo)
@@ -24,7 +23,8 @@ var register = null;    // payload de registro SSAP (manifiesto + client-key) qu
 var started = false;
 var paused = false;     // en pausa tras pulsar Inicio dos veces; se reactiva al abrir la app a mano
 var fg = "";            // app en primer plano
-var screenOff = false;  // la tele ha pasado a reposo (llega un primer plano vacío)
+var screenOff = false;  // la tele está en reposo (según su estado de energía)
+var powerKnown = false; // el estado de energía llega por SSAP; si no, se deduce del primer plano vacío
 var returning = false;  // se está devolviendo la app tras pulsar la casita
 var cycleStart = 0;     // cuándo apareció la barra en este ciclo de vuelta
 var appSince = 0;       // cuándo volvió a estar delante la app
@@ -70,6 +70,9 @@ function connect() {
         ssapSend("subscribe", "ssap://com.webos.applicationManager/getForegroundAppInfo", {}, function (p) {
           onForeground(p);
         });
+        ssapSend("subscribe", "ssap://com.webos.service.tvpower/power/getPowerState", {}, function (p) {
+          onPower(p);
+        });
       } else if (msg.type === "error") {
         log("ssap", {error: msg.error});
       }
@@ -88,27 +91,50 @@ function notifyReturn() {
   listeners.forEach(function (m) { try { m.respond({returnValue: true, subscribed: true, watchdog: "return"}); } catch (e) {} });
 }
 
+// Estado de energía: "Active" es la tele encendida; "Active Standby", "Suspend", "Screen Off"... es reposo.
+// Los avisos con "processing" son transiciones (p. ej. "Request Power Off") y se espera al estado final.
+// El primer plano vacío no sirve para esto: también llega al cerrarse ventanas de LG (actualización de
+// software, Modo Desarrollador...) justo antes de que vuelva la barra de inicio.
+function onPower(p) {
+  if (p.returnValue === false || !p.state) {
+    log("power", {error: p.errorText || p.errorCode || "sin estado"});
+    return;
+  }
+  log("power", {state: p.state, processing: p.processing});
+  if (p.processing) return;
+  var on = p.state === "Active" || p.state === "Screen Saver";
+  var wasKnown = powerKnown;
+  powerKnown = true;
+  if (!on) {
+    screenOff = true;
+    clearTimeout(timer);
+    return;
+  }
+  if (screenOff && wasKnown) powerOn();
+  screenOff = false;
+}
+
+// Encendido: se quita la pausa, pero no se abre la app. La tele arranca en TV en directo (o en su última
+// entrada) y abrir la app encima cortaría lo que se está viendo; la casita ya lleva a QuickAccess TV.
+function powerOn() {
+  paused = false;
+  log("powerOn", {appId: fg});
+}
+
 function onForeground(p) {
   var app = p.appId, now = Date.now();
   log("foreground", {appId: app, paused: paused});
-  if (!app) {               // pantalla apagada (la tele en reposo)
-    screenOff = true;
+  if (!app) {               // ventana de LG cerrándose o pantalla apagando
+    if (!powerKnown) screenOff = true;
     fg = "";
     clearTimeout(timer);
     return;
   }
   fg = app;
   if (screenOff) {
-    // Encendido: como en Fire TV, se quita la pausa y se abre la app (salvo que ya esté delante).
+    if (powerKnown) return;   // en reposo: el encendido lo detecta onPower
     screenOff = false;
-    paused = false;
-    if (app !== APP_ID && !dryRun) {
-      log("powerOn", {appId: app});
-      cycleStart = now;
-      attempts = 0;
-      schedule(POWER_ON_DELAY_MS, true);
-      return;
-    }
+    powerOn();
   }
   if (app !== HOME_ID) {
     clearTimeout(timer);
@@ -142,20 +168,20 @@ function onForeground(p) {
 }
 
 // Abre la app cuando la barra ya ha entrado (antes, la tele ignora la orden) y lo reintenta si la barra
-// sigue delante. Con powerOn, lo reintenta mientras la app no esté delante (al encender aparece otra app).
-function schedule(delay, powerOn) {
+// sigue delante.
+function schedule(delay) {
   clearTimeout(timer);
   timer = setTimeout(function () {
     if (paused || fg === APP_ID) return;
-    if (!powerOn && fg !== HOME_ID) return;
+    if (fg !== HOME_ID) return;
     if (attempts >= MAX_ATTEMPTS) { log("giveup", {}); return; }
     attempts++;
     lastLaunch = Date.now();
     var attempt = attempts;
     ssapSend("request", "ssap://system.launcher/launch", {id: APP_ID}, function (r) {
-      log("redirect", {ok: r.returnValue, attempt: attempt, powerOn: !!powerOn});
+      log("redirect", {ok: r.returnValue, attempt: attempt});
     });
-    schedule(RETRY_MS, powerOn);
+    schedule(RETRY_MS);
   }, delay);
 }
 
